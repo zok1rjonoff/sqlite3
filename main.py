@@ -23,8 +23,8 @@ def search_by_phone_number(phone_number):
 
 
 def search_by_fullname_and_phonenumber(fullname, phonenumber):
-    return query.execute("select fullname, phone_number from clients where fullname = ? , phone_number = ?;",
-                         (fullname, phonenumber))
+    return query.execute("select fullname, phone_number from clients where fullname = ? and phone_number = ?;",
+                         (fullname, phonenumber)).fetchone()
 
 
 def balance_replenishment(fullanmae, balamce):

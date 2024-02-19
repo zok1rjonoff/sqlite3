@@ -5,6 +5,7 @@ query = connection.cursor()
 
 query.execute("create table if not exists students (id integer,name text,age integer, grade text);")
 
+
 # query.execute("insert into students (id,name,age,grade) values(1,'Bobur',15,'A+');")
 # query.execute("insert into students (id,name,age,grade) values(2,'Borya',14,'B');")
 # query.execute("insert into students (id,name,age,grade) values(3,'Sasha',11,'D+');")
@@ -16,13 +17,13 @@ def get_student_by_name(name):
 
 
 def update_student_grade(name, grade):
-    query.execute("update student set grade = ? where name = ?;",(grade,name))
+    query.execute("update students set grade = ? where name = ?;", (grade, name))
     connection.commit()
     return f"Updated successfully \n"
 
 
 def delete_student(name):
-    query.execute("delete from student where name = ?",(name,))
+    query.execute("delete from students where name = ?", (name,))
     connection.commit()
     return f"Successfully deleted \n"
 
@@ -44,7 +45,7 @@ while True:
     elif operation == 2:
         name = input("Enter the name of the student ")
         grade = input("Enter new grade ")
-        result = update_student_grade(name,grade)
+        result = update_student_grade(name, grade)
         print(result)
     elif operation == 3:
         name = input("Enter the name of the student ")
