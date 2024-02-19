@@ -4,9 +4,8 @@ connection = sqlite3.connect("bank.db")
 query = connection.cursor()
 # query.execute("drop table clients")
 query.execute("create table if not exists clients (fullname text, phone_number text,balance real); ")
-
-
 # query.execute("delete from clients;")
+
 
 def registration(fullname, phonenumber):
     query.execute("insert into clients (fullname, phone_number,balance) values(?,?,0);", (fullname, phonenumber))
@@ -111,4 +110,3 @@ while True:
 
 connection.commit()
 connection.close()
-
