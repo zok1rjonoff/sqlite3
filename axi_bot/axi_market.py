@@ -67,7 +67,7 @@ def get_location(message, user_name, user_number):
         bot.send_message(user_id, f"Welcome {database.get_user(user_id)} to our bot :)",reply_markup=telebot.types.ReplyKeyboardRemove())
     # Если юзер отправил локацию не по кнопке
     else:
-        bot.send_message(user_id, 'Отправьте локацию через кнопку!',
+        bot.send_message(user_id, f"{user_name} please send your location again\nSomething went wrong",
                          reply_markup=axi_market_buttons.location_button())
         # Возврат на этап получения локации
         bot.register_next_step_handler(message, get_location,
