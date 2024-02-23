@@ -64,7 +64,7 @@ def get_location(message, user_name, user_number):
         user_location = geolocator.reverse(f'{message.location.longitude}, '
                                            f'{message.location.latitude}')
         database.registration(user_id, user_name, user_number, user_location)
-        bot.send_message(user_id, 'Регистрация прошла упешно!')
+        bot.send_message(user_id, f"Welcome {database.get_user(user_id)} to our bot :)",reply_markup=telebot.types.ReplyKeyboardRemove())
     # Если юзер отправил локацию не по кнопке
     else:
         bot.send_message(user_id, 'Отправьте локацию через кнопку!',
