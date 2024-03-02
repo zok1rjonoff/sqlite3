@@ -1,105 +1,144 @@
 import sqlite3
 
-connection = sqlite3.connect("axi_market.db", check_same_thread=False)
-query = connection.cursor()
+# Подключение к БД
+connection = sqlite3.connect('shop.db', check_same_thread=False)
+# Связь между Python и SQL
+sql = connection.cursor()
 
-query.execute("create table if not exists users (id integer,name text,number text,location text);")
+# Создание таблицы пользователей
+sql.execute('CREATE TABLE IF NOT EXISTS users ('
+            'id INTEGER, '
+            'name TEXT, '
+            'number TEXT, '
+            'location TEXT'
+            ');')
+# Создание таблицы продуктов
+sql.execute('CREATE TABLE IF NOT EXISTS products ('
+            'pr_id INTEGER PRIMARY KEY AUTOINCREMENT, '
+            'pr_name TEXT, '
+            'pr_count INTEGER, '
+            'pr_description TEXT, '
+            'pr_price REAL, '
+            'pr_photo TEXT'
+            ');')
+# Создание таблицы корзины
+sql.execute('CREATE TABLE IF NOT EXISTS cart ('
+            'id INTEGER, '
+            'user_pr_name TEXT, '
+            'user_pr_count INTEGER, '
+            'total REAL'
+            ');')
 
-query.execute("create table if not exists products "
-              "(id integer primary key autoincrement,"
-              "product_name text,"
-              "product_count integer,"
-              "product_description text,"
-              "product_price real,"
-              "product_photo text);")
 
-query.execute("create table if not exists basket ("
-              "id integer,"
-              "user_product_name text,"
-              "user_product_count integer);")
-
-
-def check_user(user_id):
-    exist = query.execute("select * from users where id = ?;", (user_id,))
-    if exist.fetchone():
+## Методы для пользователя ##
+# Проверка на наличие юзера в БД
+def check_user(id):
+    check = sql.execute('SELECT * FROM users WHERE id=?;', (id,))
+    if check.fetchone():
         return True
     else:
         return False
 
 
-def get_user(user_id):
-    return query.execute("select name from users where id = ?;",(user_id,)).fetchone()[0]
-
-
-def registration(user_id, name, phone_number, location):
-    query.execute("insert into users values(?,?,?,?);", (user_id, name, phone_number, location))
+# Регистрация пользователя
+def register(id, name, number, location):
+    sql.execute('INSERT INTO users VALUES(?, ?, ?, ?);', (id, name, number, location))
+    # Фиксируем изменения
     connection.commit()
 
 
-def get_product():
-    return query.execute("select id, product_name,product_count from products;").fetchall()
+## Методы для продуктов ##
+# Сторона пользователя
+# Вывод всех товаров
+def get_pr():
+    p = sql.execute('SELECT pr_id, pr_name, pr_count FROM products;').fetchall()
+    return p
 
 
-def get_exact_product(pr_id):
-    return query.execute("select product_name,product_price,product_count,product_description,product_photo from "
-                         "products where id = ?;", (pr_id,)).fetchone()
+def get_product_count_by_id(product_id):
+    product = sql.execute("select pr_count from products where pr_id = ?;", (product_id,)).fetchone()
+    return product
 
 
-def add_pr_to_basket(user_id, user_pr, user_pr_count):
-    query.execute("insert into basket values(?,?,?);", (user_id, user_pr, user_pr_count))
+# Вывод информации о конкретном продукте
+def get_exact_pr(pr_id):
+    a = sql.execute('SELECT pr_name, pr_description, pr_count, pr_price, pr_photo '
+                    'FROM products WHERE pr_id=?;', (pr_id,)).fetchone()
+    return a
+
+
+# Добавление товара в корзину
+def add_pr_to_cart(user_id, user_pr, user_pr_count, total):
+    sql.execute('insert into cart (id,user_pr_name,user_pr_count,total) VALUES(?, ?, ?, ?);', (user_id, user_pr, user_pr_count, total))
     connection.commit()
 
 
-def show_basket(user_id):
-    basket = query.execute("select * from basket where is = ?;",(user_id,)).fetchone()
-    if basket:
-        return basket
-    else:
-        return False
-
-
-def delete_from_basket(user_id):
-    query.execute("delete from basket where id = ?;",(user_id,))
+# Сторона админа
+# Добавление продукта
+def add_pr(pr_name, pr_description, pr_count, pr_price, pr_photo):
+    sql.execute('INSERT INTO products(pr_name, pr_description, pr_count, pr_price, pr_photo) '
+                'VALUES(?, ?, ?, ?, ?);', (pr_name, pr_description, pr_count, pr_price, pr_photo))
+    # Фиксируем изменения
     connection.commit()
 
 
-def make_order(user_id):
-    name = query.execute("select user_product_name from products where id = ?;",(user_id,)).fetchone()[0]
-    count = query.execute("select user_product_count from basket where id = ?;",(user_id,)).fetchone()[0]
-    current_count = query.execute("select product_count from products where product_name = ?;",(name,)).fetchone()[0]
-    query.execute("update products set product_count = ? where product_name = ?;",(current_count-count,name))
-    info = query.execute("select * from basket where id =?;",(user_id,)).fetchone()
-    address = query.execute("select location from users where id = ?;",(user_id,)).fetchone()
-    query.execute("delete from basket where id = ?",(user_id,))
-    connection.commit()
-    return info,address
-
-
-def add_product(pr_name, pr_des, pr_count, pr_price, pr_photo):
-    query.execute("insert into products (product_name,product_description,product_count,product_price,"
-                  "product_photo) values(?,?,?,?,?);", (pr_name, pr_des, pr_count, pr_price, pr_photo))
+# Удаление продукта
+def del_pr(pr_id):
+    sql.execute('DELETE FROM products WHERE pr_id=?;', (pr_id,))
+    # Фиксируем изменения
     connection.commit()
 
 
-def delete_product(pr_id):
-    query.execute("delete from products where id = ?;", (pr_id,))
+# Изменение количество (можно что-то своё)
+def change_pr_count(pr_id, new_count):
+    current_count = sql.execute('SELECT pr_count FROM products WHERE pr_id=?;', (pr_id,)).fetchone()
+    sql.execute('UPDATE products SET pr_count=? WHERE pr_id=?;',
+                (current_count[0] + new_count, pr_id))
+    # Фиксируем изменения
     connection.commit()
 
 
-def change_pr_count(pr_id, pr_count):
-    current_count = query.execute("select product_count from products where id = ?;", (pr_id,)).fetchone()
-    updated_count = current_count[0]
-    query.execute("update products set product_count = ? where id = ?;", (updated_count + pr_count, pr_id))
-    connection.commit()
-
-
-
+# Проверка на наличие товаров в БД
 def check_pr():
-    check = query.execute("select * from products;").fetchone()
-    if check:
+    pr_check = sql.execute('SELECT * FROM products;')
+    if pr_check.fetchone():
         return True
     else:
         return False
 
 
-connection.commit()
+## Методы для корзины ##
+# Отображение корзины
+def show_cart(user_id):
+    cart_check = sql.execute('SELECT * FROM cart WHERE id=?;', (user_id,)).fetchone()
+    return cart_check
+
+
+# Очистка корзины
+def clear_cart(user_id):
+    sql.execute('DELETE FROM cart WHERE id=?;', (user_id,))
+    # Фиксируем изменения
+    connection.commit()
+
+
+# Оформление заказа
+def make_order(user_id):
+    print(user_id)
+    pr_name = sql.execute('SELECT user_pr_name FROM cart WHERE id=?;', (user_id,)).fetchone()[0]
+
+    user_pr_count = sql.execute('SELECT user_pr_count FROM cart WHERE id=?;',
+                                (user_id,)).fetchone()[0]
+
+    current_count = sql.execute('select pr_count from products where pr_id=?;',
+                                (pr_name,)).fetchone()[0]
+    sql.execute('UPDATE products SET pr_count=? WHERE pr_name=?;',
+                (current_count - user_pr_count, pr_name))
+    info = sql.execute("select * from cart where id = ?;", (855574466,)).fetchone()
+    address = sql.execute('SELECT location FROM users WHERE id=?;', (user_id,)).fetchone()[0]
+    # sql.execute('DELETE FROM cart WHERE id=?;', (user_id,))
+    connection.commit()
+    return info, address
+
+
+# s = sql.execute("select * from cart where id = ?;",(855574466,)).fetchone()[0]
+# print(s)
